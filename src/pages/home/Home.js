@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { WheelData } from "../../api";
+import Banner from "../../components/Banner";
 
 const Home = () => {
   const [wheel, setWheel] = useState("");
@@ -16,7 +17,7 @@ const Home = () => {
     })();
   }, []);
 
-  return;
+  return <Banner />;
 };
 
 export default Home;

@@ -4,7 +4,6 @@ import styled from "styled-components";
 import { WheelData } from "../../api";
 
 // 스타일 정의 (변경 금지)
-
 const Wrap = styled.div`
   padding: 20px;
 `;
@@ -64,39 +63,46 @@ const BookmarkIcon = styled.button`
 `;
 
 const Location = () => {
-  const { locateNm } = useParams();
-  const decodedLocateNm = decodeURIComponent(locateNm); // URL 파라미터 디코딩
-  const [data, setData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { locateNm } = useParams(); // URL 파라미터 가져오기
+  const decodedLocateNm = decodeURIComponent(locateNm); // 디코딩
+  const [data, setData] = useState([]); // 데이터 상태
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태
 
   useEffect(() => {
+    // API 호출 로직
     (async () => {
       try {
-        setIsLoading(true);
-        const response = await WheelData();
-        console.log("API 데이터:", response);
+        setIsLoading(true); // 로딩 시작
+        const response = await WheelData(); // 데이터 호출
+        console.log("API 데이터:", response); // API 응답 데이터 출력
 
-        const wheelData = response.response?.body?.items || []; // 데이터 경로 확인
-        console.log("wheelData:", wheelData);
+        // 응답 데이터 구조 확인
+        const wheelData = response?.response?.body?.items || []; // items가 배열인지 확인
+        console.log("wheelData:", wheelData); // API 응답의 실제 데이터 구조 확인
 
-        // `gubun` 또는 `contents` 필드를 기준으로 필터링
-        const filteredData = wheelData.filter(
-          (item) =>
-            (item.gubun &&
-              item.gubun.replace(/\s+/g, "").toLowerCase() ===
-                decodedLocateNm.replace(/\s+/g, "").toLowerCase()) ||
-            (item.contents &&
-              item.contents
-                .toLowerCase()
-                .includes(decodedLocateNm.toLowerCase())) // 주소에서 찾기
-        );
+        // wheelData가 배열일 경우 필터링
+        if (Array.isArray(wheelData)) {
+          const filteredData = wheelData.filter(
+            (item) =>
+              (item.gubun &&
+                item.gubun.replace(/\s+/g, "").toLowerCase() ===
+                  decodedLocateNm.replace(/\s+/g, "").toLowerCase()) ||
+              (item.contents &&
+                item.contents
+                  .toLowerCase()
+                  .includes(decodedLocateNm.toLowerCase())) // contents에서 찾기
+          );
 
-        console.log("filteredData:", filteredData);
-        setData(filteredData);
+          console.log("filteredData:", filteredData); // 필터링된 데이터 확인
+          setData(filteredData); // 필터링된 데이터 저장
+        } else {
+          console.error("wheelData가 배열이 아닙니다:", wheelData);
+          setData([]); // 배열이 아니면 빈 배열 설정
+        }
       } catch (error) {
         console.error("Error fetching data: ", error);
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // 로딩 종료
       }
     })();
   }, [decodedLocateNm]);
@@ -105,18 +111,18 @@ const Location = () => {
     <Wrap>
       <Title>{decodedLocateNm}</Title>
       {isLoading ? (
-        <p>로딩 중...</p>
+        <p>로딩 중...</p> // 로딩 중 메시지
       ) : data.length === 0 ? (
-        <p>데이터가 없습니다.</p>
+        <p>데이터가 없습니다.</p> // 데이터가 없을 경우
       ) : (
         <CardList>
           {data.map((item, index) => (
             <Card key={index}>
               <CardContent>
                 <Subject>{item.subject}</Subject>
-                <Info>{item.contents}</Info>
+                <Info>{item.contents}</Info> {/* contents에 포함된 주소 출력 */}
               </CardContent>
-              <BookmarkIcon>☆</BookmarkIcon>
+              <BookmarkIcon>☆</BookmarkIcon> {/* 북마크 아이콘 */}
             </Card>
           ))}
         </CardList>

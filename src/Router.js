@@ -5,6 +5,7 @@ import Search from "./pages/search/Search";
 import Detail from "./pages/detail/Detail";
 import BookMark from "./pages/bookmark/BookMark";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 const Router = () => {
   return (
@@ -12,11 +13,12 @@ const Router = () => {
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/location" element={<Location />} />
+        <Route path="/location/:locateNm" element={<Location />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/detail" element={<Detail />} />
+        <Route path="/detail/:id" element={<Detail />} />
         <Route path="/bookmark" element={<BookMark />} />
       </Routes>
+      <Footer />
     </HashRouter>
   );
 };

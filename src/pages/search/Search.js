@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { mainStyle } from "../../GlobalStyled";
 
 const Wrap = styled.div`
-  padding: 0 ${mainStyle.moPadding};
+  padding: 20px ${mainStyle.moPadding};
 `;
 
 const Form = styled.form`
@@ -17,6 +17,12 @@ const Form = styled.form`
     border-bottom: 3px solid #13a89e;
   }
 `;
+
+const NoResultMessage = styled.h3``;
+
+const ConWrap = styled.div``;
+
+const Con = styled.div``;
 
 const Search = () => {
   const {
@@ -45,6 +51,16 @@ const Search = () => {
           placeholder="검색어를 입력해주세요"
         />
       </Form>
+
+      {term.length === 0 ? (
+        <NoResultMessage>검색어에 맞는 결과가 없습니다</NoResultMessage>
+      ) : (
+        <ConWrap>
+          {term.map((data, index) => {
+            <Con key={index}>{data.subject}</Con>;
+          })}
+        </ConWrap>
+      )}
     </Wrap>
   );
 };

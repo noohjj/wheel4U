@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { WheelData } from "../../api";
 
-// 스타일 정의 (변경 금지)
+// 스타일 정의
 const Wrap = styled.div`
   padding: 20px;
 `;
@@ -69,43 +69,56 @@ const Location = () => {
   const [isLoading, setIsLoading] = useState(true); // 로딩 상태
 
   useEffect(() => {
-    // API 호출 로직
+    // API 호출
     (async () => {
       try {
         setIsLoading(true); // 로딩 시작
-        const response = await WheelData(); // 데이터 호출
-        console.log("API 데이터:", response); // API 응답 데이터 출력
+        const response = await WheelData(); // API 호출
+        console.log("API 전체 응답:", response);
 
-        // 응답 데이터 구조 확인
-        const wheelData = response?.response?.body?.items || []; // items가 배열인지 확인
-        console.log("wheelData:", wheelData); // API 응답의 실제 데이터 구조 확인
+        // items 배열 추출
+        const items = response?.response?.body?.items?.item || []; 
 
-        // wheelData가 배열일 경우 필터링
-        if (Array.isArray(wheelData)) {
-          const filteredData = wheelData.filter(
-            (item) =>
-              (item.gubun &&
-                item.gubun.replace(/\s+/g, "").toLowerCase() ===
-                  decodedLocateNm.replace(/\s+/g, "").toLowerCase()) ||
-              (item.contents &&
-                item.contents
-                  .toLowerCase()
-                  .includes(decodedLocateNm.toLowerCase())) // contents에서 찾기
-          );
-
-          console.log("filteredData:", filteredData); // 필터링된 데이터 확인
-          setData(filteredData); // 필터링된 데이터 저장
-        } else {
-          console.error("wheelData가 배열이 아닙니다:", wheelData);
-          setData([]); // 배열이 아니면 빈 배열 설정
+        if (!Array.isArray(items)) {
+          console.error("items가 배열이 아닙니다:", items);
+          setData([]);
+          return;
         }
+
+        // 필터링 로직
+        const filteredData = items.filter((item) => {
+          const addressMatch = item.contents
+            ?.toLowerCase()
+            .includes(decodedLocateNm.toLowerCase()); // 주소 내 필터링
+          const gubunMatch = item.gubun
+            ?.toLowerCase()
+            .includes(decodedLocateNm.toLowerCase()); // gubun 필터링
+          return addressMatch || gubunMatch;
+        });
+
+        console.log("filteredData:", filteredData);
+        setData(filteredData); // 필터링된 데이터 저장
       } catch (error) {
         console.error("Error fetching data: ", error);
+        setData([]); // 오류 발생 시 빈 배열 설정
       } finally {
         setIsLoading(false); // 로딩 종료
       }
     })();
   }, [decodedLocateNm]);
+
+  // HTML에서 필요한 정보만 추출하는 함수
+  const extractContents = (contents) => {
+    if (!contents) return ""; // 내용이 없을 경우 빈 문자열 반환
+
+    // <p> 태그로 구분된 데이터를 배열로 변환
+    const paragraphs = contents.split(/<\/?p>/).filter((text) => text.trim() !== "");
+
+    // 필요한 데이터만 추출 (상호, 주소, 위치, 테이블 수, 주메뉴)
+    const limitedContents = paragraphs.slice(0, 5).join("<br>"); // 5번째 줄까지만 가져옴
+
+    return limitedContents;
+  };
 
   return (
     <Wrap>
@@ -120,7 +133,9 @@ const Location = () => {
             <Card key={index}>
               <CardContent>
                 <Subject>{item.subject}</Subject>
-                <Info>{item.contents}</Info> {/* contents에 포함된 주소 출력 */}
+                <Info
+                  dangerouslySetInnerHTML={{ __html: extractContents(item.contents) }} // HTML 콘텐츠 처리
+                ></Info>
               </CardContent>
               <BookmarkIcon>☆</BookmarkIcon> {/* 북마크 아이콘 */}
             </Card>

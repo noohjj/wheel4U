@@ -15,6 +15,7 @@ ${reset}
 body{
     max-width: 450px;
     width: 100%;
+    position: relative;
     margin: 0 auto;
     font-family: "Noto Sans KR", sans-serif;
     letter-spacing: -1px;

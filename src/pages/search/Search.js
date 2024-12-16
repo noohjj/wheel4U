@@ -74,8 +74,8 @@ const Search = () => {
     try {
       const data = await WheelData(); // API 호출
       const items = data?.response?.body?.items || []; // 응답 데이터에서 items 배열 추출
+      console.log("Fetched Data:", items); // 데이터를 콘솔에 출력하여 확인
 
-      // 데이터가 배열이라면
       if (Array.isArray(items)) {
         setTerm(items); // 데이터를 term 상태에 저장
       } else {
@@ -95,33 +95,50 @@ const Search = () => {
   }, []);
 
   // 검색어를 입력한 후 검색 결과를 필터링
-  const onSearch = async (data) => {
+  const onSearch = (data) => {
     const { search: keyword } = data;
     if (!keyword.trim()) {
       setTerm([]); // 검색어가 비어있으면 초기화
       return;
     }
 
+    console.log("Searching for:", keyword); // 검색어 콘솔에 출력하여 확인
+
     setLoading(true);
-    try {
-      const result = await WheelData(); // API 호출
+    WheelData().then((result) => {
       const items = result?.response?.body?.items || [];
+      console.log("Fetched Data on Search:", items); // 검색 시 가져온 데이터 출력
 
       if (Array.isArray(items)) {
         // 검색어와 항목을 비교하여 필터링
-        const filteredData = items.filter((item) =>
-          item.subject.toLowerCase().includes(keyword.trim().toLowerCase()) // 대소문자 구분 없이 비교
-        );
+        const filteredData = items.filter((item) => {
+          // 검색어를 포함하는지 각 항목의 여러 필드에서 확인
+          const fieldsToSearch = [
+            item.subject,
+            item.contents,
+            item.setValueNm,
+            item.gubun,
+            item.boardCodeNm,
+          ];
+
+          // 각 필드에 대해 검색어와 포함 여부를 확인 (null 또는 undefined 처리)
+          return fieldsToSearch.some((field) =>
+            field && field.toLowerCase().includes(keyword.trim().toLowerCase()) // 대소문자 구분 없이 비교
+          );
+        });
+
+        console.log("Filtered Data:", filteredData); // 필터링된 데이터 출력
+        
         setTerm(filteredData); // 필터링된 데이터로 상태 업데이트
       } else {
         setTerm([]); // items가 배열이 아니면 빈 배열
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setTerm([]);
-    } finally {
       setLoading(false);
-    }
+    }).catch((error) => {
+      console.error("Error fetching data during search:", error);
+      setTerm([]); // 오류 발생 시 빈 배열
+      setLoading(false);
+    });
   };
 
   return (

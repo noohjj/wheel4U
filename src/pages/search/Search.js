@@ -1,13 +1,12 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import styled from "styled-components";
-import { mainStyle } from "../../GlobalStyled";
-import { WheelData } from "../../api"; // API 파일에서 WheelData를 가져옵니다.
+import { WheelData } from "../../api";
+import { Link } from "react-router-dom";
 
 const Wrap = styled.div`
-  padding: 20px ${mainStyle.moPadding};
+  padding: 20px;
   background-color: #f9f9f9;
-  border-radius: 8px;
 `;
 
 const Form = styled.form`
@@ -19,16 +18,11 @@ const Form = styled.form`
     border-bottom: 3px solid #13a89e;
     font-size: 16px;
     padding-left: 10px;
-    &:focus {
-      outline: none;
-      border-color: #1c7a74;
-    }
   }
 `;
 
 const NoResultMessage = styled.h3`
   font-size: 18px;
-  color: #999;
   text-align: center;
 `;
 
@@ -37,11 +31,13 @@ const ConWrap = styled.div`
 `;
 
 const Con = styled.div`
-  background-color: white;
   padding: 15px;
   margin-bottom: 15px;
+  background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
@@ -50,120 +46,119 @@ const Con = styled.div`
 const ConTitle = styled.h4`
   font-size: 18px;
   font-weight: bold;
-  color: #333;
 `;
 
-const ConContent = styled.p`
+const Title = styled.div``;
+
+const BookmarkIcon = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: #13a89e;
+
+  &:hover {
+    color: #0f8073;
+  }
+`;
+
+const ConContent = styled.div`
   font-size: 14px;
   color: #666;
   line-height: 1.6;
+  margin-top: 5px;
+
+  a {
+    color: #13a89e;
+    text-decoration: underline;
+  }
 `;
 
 const Search = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
-  const [term, setTerm] = useState([]); // 검색 결과 저장
-  const [loading, setLoading] = useState(false); // 로딩 상태 관리
+  const { register, handleSubmit } = useForm();
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 데이터 가져오는 함수
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const data = await WheelData(); // API 호출
-      const items = data?.response?.body?.items || []; // 응답 데이터에서 items 배열 추출
-      console.log("Fetched Data:", items); // 데이터를 콘솔에 출력하여 확인
-
-      if (Array.isArray(items)) {
-        setTerm(items); // 데이터를 term 상태에 저장
-      } else {
-        setTerm([]); // 빈 배열로 초기화
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setTerm([]); // 오류 발생 시 빈 배열
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 페이지 로딩 시 데이터 가져오기
   useEffect(() => {
-    fetchData();
+    (async () => {
+      setLoading(true);
+      try {
+        const fetchedData = await WheelData();
+        console.log("fetchedData:", fetchedData);
+
+        const items = fetchedData?.response?.body?.items?.item || [];
+        if (!Array.isArray(items)) {
+          console.error("items가 배열이 아님:", items);
+          setData([]);
+        } else {
+          setData(items);
+        }
+        setFilteredData(items);
+      } catch (error) {
+        console.error("API 호출 오류 발생:", error);
+        setData([]);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+      // finally : 항상 실행이 보장되어야 하는 코드, try 블록이 종료되면 실행되는 코드
+    })();
   }, []);
 
-  // 검색어를 입력한 후 검색 결과를 필터링
-  const onSearch = (data) => {
-    const { search: keyword } = data;
-    if (!keyword.trim()) {
-      setTerm([]); // 검색어가 비어있으면 초기화
+  const onSearch = ({ search }) => {
+    const keyword = search.trim().toLowerCase();
+    // trim : 문자열 앞 뒤 공백 없에기 ex:"가 나 다 라 마"
+    if (!keyword) {
+      setFilteredData(data);
       return;
     }
 
-    console.log("Searching for:", keyword); // 검색어 콘솔에 출력하여 확인
-
-    setLoading(true);
-    WheelData().then((result) => {
-      const items = result?.response?.body?.items || [];
-      console.log("Fetched Data on Search:", items); // 검색 시 가져온 데이터 출력
-
-      if (Array.isArray(items)) {
-        // 검색어와 항목을 비교하여 필터링
-        const filteredData = items.filter((item) => {
-          // 검색어를 포함하는지 각 항목의 여러 필드에서 확인
-          const fieldsToSearch = [
-            item.subject,
-            item.contents,
-            item.setValueNm,
-            item.gubun,
-            item.boardCodeNm,
-          ];
-
-          // 각 필드에 대해 검색어와 포함 여부를 확인 (null 또는 undefined 처리)
-          return fieldsToSearch.some((field) =>
-            field && field.toLowerCase().includes(keyword.trim().toLowerCase()) // 대소문자 구분 없이 비교
-          );
-        });
-
-        console.log("Filtered Data:", filteredData); // 필터링된 데이터 출력
-        
-        setTerm(filteredData); // 필터링된 데이터로 상태 업데이트
-      } else {
-        setTerm([]); // items가 배열이 아니면 빈 배열
-      }
-      setLoading(false);
-    }).catch((error) => {
-      console.error("Error fetching data during search:", error);
-      setTerm([]); // 오류 발생 시 빈 배열
-      setLoading(false);
+    const results = data.filter((item) => {
+      const fieldsToSearch = [
+        item.subject,
+        item.contents, // HTML 태그는 제거하지 않고 검색
+        item.gubun,
+        item.boardCodeNm,
+      ];
+      return fieldsToSearch.some(
+        (field) => field?.toLowerCase().includes(keyword)
+        // 소문자로 변환된 field에 검색어 keyword가 포함되어 있는지 확인.
+      );
+      // some: 배열 요소 중 하나라도 조건을 만족할 시 활성화(true 반환, 조건이 만족하지 않을 시 false)
     });
+
+    setFilteredData(results);
   };
 
   return (
     <Wrap>
       <Form onSubmit={handleSubmit(onSearch)}>
         <input
-          {...register("search", {
-            required: "검색어는 필수입니다.",
-          })}
+          {...register("search", { required: false })}
           type="text"
-          placeholder="검색어를 입력해주세요"
+          placeholder="검색어를 입력하세요"
         />
       </Form>
 
       {loading ? (
-        <NoResultMessage>검색 중...</NoResultMessage>
-      ) : term.length === 0 ? (
-        <NoResultMessage>검색어에 맞는 결과가 없습니다</NoResultMessage>
+        <NoResultMessage>로딩 중...</NoResultMessage>
+      ) : filteredData.length === 0 ? (
+        <NoResultMessage>결과 없음</NoResultMessage>
       ) : (
         <ConWrap>
-          {term.map((data, index) => (
-            <Con key={index}>
-              <ConTitle>{data.subject}</ConTitle>
-              <ConContent>{data.contents && data.contents.slice(0, 100)}...</ConContent>
-            </Con>
+          {filteredData.map((item, index) => (
+            <Link to={`/detail/${item.subject}`}>
+              <Con key={index}>
+                <Title>
+                  <ConTitle>{item.subject}</ConTitle>
+                  <ConContent
+                    dangerouslySetInnerHTML={{ __html: item.contents }} // HTML을 직접 렌더링할 때 쓰이는 속성명
+                  />
+                </Title>
+                <BookmarkIcon>☆</BookmarkIcon>
+              </Con>
+            </Link>
           ))}
         </ConWrap>
       )}

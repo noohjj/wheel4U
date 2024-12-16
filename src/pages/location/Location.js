@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { WheelData } from "../../api";
+import { Link } from "react-router-dom";
 
 // 스타일 정의
 const Wrap = styled.div`
@@ -45,9 +46,18 @@ const Subject = styled.h3`
 `;
 
 const Info = styled.p`
-  font-size: 14px;
+  font-size: 14px; /* 폰트 크기 */
+  line-height: 1.5; /* 행간 */
   margin: 0;
   color: #666;
+
+  /* HTML 콘텐츠 내 p 태그 스타일 강제 적용 */
+  p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    color: #666;
+  }
 `;
 
 const BookmarkIcon = styled.button`
@@ -77,7 +87,7 @@ const Location = () => {
         console.log("API 전체 응답:", response);
 
         // items 배열 추출
-        const items = response?.response?.body?.items?.item || []; 
+        const items = response?.response?.body?.items?.item || [];
 
         if (!Array.isArray(items)) {
           console.error("items가 배열이 아닙니다:", items);
@@ -112,7 +122,10 @@ const Location = () => {
     if (!contents) return ""; // 내용이 없을 경우 빈 문자열 반환
 
     // <p> 태그로 구분된 데이터를 배열로 변환
-    const paragraphs = contents.split(/<\/?p>/).filter((text) => text.trim() !== "");
+    const paragraphs = contents
+      .split(/<\/?p>/)
+      // 콘텐츠 부분 (p태그) 문자열을 특정 구분자(정규식 p태그)를 기준으로 나누어 문자열로 반환하는 것
+      .filter((text) => text.trim() !== "");
 
     // 필요한 데이터만 추출 (상호, 주소, 위치, 테이블 수, 주메뉴)
     const limitedContents = paragraphs.slice(0, 5).join("<br>"); // 5번째 줄까지만 가져옴
@@ -130,15 +143,19 @@ const Location = () => {
       ) : (
         <CardList>
           {data.map((item, index) => (
-            <Card key={index}>
-              <CardContent>
-                <Subject>{item.subject}</Subject>
-                <Info
-                  dangerouslySetInnerHTML={{ __html: extractContents(item.contents) }} // HTML 콘텐츠 처리
-                ></Info>
-              </CardContent>
-              <BookmarkIcon>☆</BookmarkIcon> {/* 북마크 아이콘 */}
-            </Card>
+            <Link to={`/detail/${item.subject}`} key={index}>
+              <Card>
+                <CardContent>
+                  <Subject>{item.subject}</Subject>
+                  <Info
+                    dangerouslySetInnerHTML={{
+                      __html: extractContents(item.contents),
+                    }} // HTML 콘텐츠 처리
+                  ></Info>
+                </CardContent>
+                <BookmarkIcon>☆</BookmarkIcon> {/* 북마크 아이콘 */}
+              </Card>
+            </Link>
           ))}
         </CardList>
       )}

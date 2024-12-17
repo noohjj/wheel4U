@@ -1,79 +1,66 @@
-import { useEffect, useState } from "react";
-import { WheelData } from "../../api"; // API 호출 함수
-import { useParams } from "react-router-dom"; // URL 파라미터
-import styled from "styled-components"; // 스타일링 라이브러리
-import { mainStyle } from "../../GlobalStyled"; // 글로벌 스타일
-
-const Container = styled.div`
-  padding: 0 ${mainStyle.moPadding};
-`;
-
-const Bg = styled.div`
-  width: 100%;
-  height: 300px;
-  background: ${(props) => `url(${props.url}) no-repeat center / cover`};
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  margin-top: 20px;
-`;
-
-const Content = styled.p`
-  font-size: 1rem;
-  margin-top: 10px;
-  color: #333;
-`;
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { WheelData } from "../../api";  // API 호출 함수
 
 const Detail = () => {
   const { id } = useParams();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState({ imgUrl: "", subject: "", contents: "" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // 데이터를 API로부터 가져오는 useEffect
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const fetchedData = await WheelData(id); // API에서 데이터 가져오기
-        console.log("Fetched Data:", fetchedData); // API 응답 구조 확인
+        setLoading(true);  // 로딩 시작
+        const fetchedData = await WheelData(id);  // API 호출
+        console.log("API Response:", fetchedData);
 
-        // API 응답 구조에 맞게 데이터를 추출
-        if (
-          fetchedData?.response?.body?.items &&
-          Array.isArray(fetchedData.response.body.items)
-        ) {
-          setData(fetchedData.response.body.items[0]); // 첫 번째 항목만 사용
+        // 응답 데이터가 있으면 상태 업데이트
+        if (fetchedData) {
+          setData({
+            imgUrl: fetchedData.imgUrl || "https://via.placeholder.com/300",  // 기본 이미지
+            subject: fetchedData.subject || "제목 없음",  // 기본 제목
+            contents: fetchedData.contents
+              ? fetchedData.contents.replace(/!R!!N!/g, "").replace(/\n/g, "")  // HTML 태그 정리
+              : "내용 없음",  // 기본 내용
+          });
         } else {
-          setData(null); // "items"가 없으면 null로 설정
+          throw new Error("No data found");
         }
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-        setData(null); // 오류 발생 시 null로 설정
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);  // 로딩 종료
       }
     };
 
-    fetchData();
-  }, [id]);
+    fetchData();  // API 호출
+  }, [id]);  // id가 변경될 때마다 API 호출
 
-  // 로딩 중일 때 표시
-  if (data === null) {
-    return <p>Loading...</p>;
-  }
+  // 로딩 중이면 로딩 표시
+  if (loading) return <div>로딩 중...</div>;
 
-  // 데이터가 있으면 렌더링
+  // 에러 발생 시 에러 메시지 출력
+  if (error) return <div>{error}</div>;
+
+  console.log("Rendered State:", data);
+
   return (
-    <Container>
-      {data ? (
-        <div>
-          {/* 배경 이미지 표시 */}
-          <Bg url={data.imgUrl || "https://via.placeholder.com/150"} />
-          {/* 제목 표시 */}
-          <Title>{data.subject}</Title>
-          {/* HTML 콘텐츠 표시 */}
-          <Content dangerouslySetInnerHTML={{ __html: data.contents }} />
-        </div>
-      ) : (
-        <p>No data available.</p> // 데이터가 없으면 표시
-      )}
-    </Container>
+    <div style={{ textAlign: "center", margin: "20px" }}>
+      <h1>Wheel4U</h1>
+      <div>
+        <img
+          src={data.imgUrl}  // 받아온 이미지 URL 사용
+          alt={data.subject}  // 제목을 alt로 설정
+          onError={(e) => (e.target.src = "https://via.placeholder.com/300")}  // 이미지 오류 시 대체 이미지
+          style={{ width: "300px", height: "300px", objectFit: "cover" }}  // 이미지 스타일
+        />
+      </div>
+      <h2>{data.subject}</h2>  {/* 제목 */}
+      <div dangerouslySetInnerHTML={{ __html: data.contents }}></div>  {/* HTML 콘텐츠 출력 */}
+    </div>
   );
 };
 

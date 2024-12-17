@@ -1,10 +1,9 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // react-router-dom v6 사용
 import styled from "styled-components";
-import { WheelData } from "../../api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-regular-svg-icons";
+import { WheelData } from "../../api";
 
 const Wrap = styled.div`
   padding: 20px;
@@ -101,27 +100,22 @@ const Search = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [bookmarkedItems, setBookmarkedItems] = useState(new Set());
+  const [bookmarkedItems, setBookmarkedItems] = useState([]);
   const [expandedItem, setExpandedItem] = useState(null);
 
+  // 초기 북마크 및 데이터 로드
   useEffect(() => {
-    // Load bookmarked items from localStorage
     const savedBookmarks =
       JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
-    setBookmarkedItems(new Set(savedBookmarks));
+    setBookmarkedItems(savedBookmarks);
 
-    // Fetch data
     (async () => {
       setLoading(true);
       try {
         const fetchedData = await WheelData();
         const items = fetchedData?.response?.body?.items?.item || [];
-        if (!Array.isArray(items)) {
-          setData([]);
-        } else {
-          setData(items);
-        }
-        setFilteredData(items);
+        setData(Array.isArray(items) ? items : []);
+        setFilteredData(Array.isArray(items) ? items : []);
       } catch (error) {
         console.error("API 호출 오류 발생:", error);
         setData([]);
@@ -131,6 +125,24 @@ const Search = () => {
       }
     })();
   }, []);
+
+  // 북마크 핸들러
+  const handleBookmarkClick = (item) => {
+    setBookmarkedItems((prevItems) => {
+      const isAlreadyBookmarked = prevItems.some(
+        (bookmarkedItem) => bookmarkedItem.subject === item.subject
+      );
+
+      const updatedBookmarks = isAlreadyBookmarked
+        ? prevItems.filter(
+            (bookmarkedItem) => bookmarkedItem.subject !== item.subject
+          )
+        : [...prevItems, item];
+
+      localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
+      return updatedBookmarks;
+    });
+  };
 
   const onSearch = ({ search }) => {
     const keyword = search.trim().toLowerCase();
@@ -156,24 +168,6 @@ const Search = () => {
 
   const onItemClick = (item) => {
     setExpandedItem(item.subject === expandedItem ? null : item.subject);
-  };
-
-  const toggleBookmark = (subject) => {
-    setBookmarkedItems((prev) => {
-      const updatedBookmarks = new Set(prev);
-      if (updatedBookmarks.has(subject)) {
-        updatedBookmarks.delete(subject);
-      } else {
-        updatedBookmarks.add(subject);
-      }
-
-      // Save updated bookmarks to localStorage
-      localStorage.setItem(
-        "bookmarkedItems",
-        JSON.stringify(Array.from(updatedBookmarks))
-      );
-      return updatedBookmarks;
-    });
   };
 
   const cleanContent = (content) => {
@@ -206,10 +200,12 @@ const Search = () => {
                   <ConTitle>{item.subject}</ConTitle>
                   <BookmarkIcon
                     icon={faBookmark}
-                    isBookmarked={bookmarkedItems.has(item.subject)}
+                    isBookmarked={bookmarkedItems.some(
+                      (bookmarkedItem) => bookmarkedItem.subject === item.subject
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleBookmark(item.subject);
+                      handleBookmarkClick(item);
                     }}
                   />
                 </Title>

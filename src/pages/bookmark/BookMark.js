@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons"; // FontAwesome 아이콘을 삭제 아이콘으로 변경
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
 
 const Wrap = styled.div`
   padding: 20px;
   background-color: #f9f9f9;
-`;
-
-const Title = styled.h3`
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 20px;
+  h2{
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
 `;
 
 const ConWrap = styled.div`
@@ -34,41 +32,27 @@ const Con = styled.div`
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
-
-  ${({ expanded }) =>
-    expanded &&
-    `
-    padding-bottom: 30px;
-  `}
 `;
 
 const ConTitle = styled.h4`
   font-size: 18px;
   font-weight: bold;
-`;
-
-const TitleWrap = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-`;
-
-const DeleteIcon = styled(FontAwesomeIcon)`
-  font-size: 24px;
-  color: red;
-  cursor: pointer;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: darkred;
-  }
 `;
 
 const ConContent = styled.div`
   font-size: 14px;
   color: #666;
   line-height: 1.6;
-  margin-top: 5px;
+  margin-top: 10px;
+`;
+
+const Sub = styled.div`
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
 `;
 
 const Image = styled.img`
@@ -79,64 +63,80 @@ const Image = styled.img`
   cursor: pointer;
 `;
 
-const NoBookmarkMessage = styled.h3`
-  font-size: 18px;
-  text-align: center;
-  margin-top: 20px;
-  color: #888;
+const DeleteIcon = styled(FontAwesomeIcon)`
+  font-size: 20px;
+  color: #e74c3c;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #c0392b;
+  }
 `;
 
-const Bookmark = () => {
+const BookMark = () => {
   const [bookmarkedItems, setBookmarkedItems] = useState([]);
 
-  // 페이지 로드 시 북마크된 항목 불러오기
+  // Component load 시 로컬 스토리지에서 북마크 목록을 가져오기
   useEffect(() => {
-    const savedBookmarks =
-      JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
-    setBookmarkedItems(savedBookmarks);
+    try {
+      const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
+      setBookmarkedItems(savedBookmarks);
+    } catch (error) {
+      console.error("북마크 불러오기 오류", error);
+    }
   }, []);
 
-  // 항목 삭제 함수
-  const handleDelete = (index) => {
-    const updatedBookmarks = bookmarkedItems.filter(
-      (item, itemIndex) => itemIndex !== index
-    );
-    setBookmarkedItems(updatedBookmarks);
-    localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
+  // 북마크 삭제 처리
+  const handleDeleteBookmark = (subject) => {
+    setBookmarkedItems((prev) => {
+      const updatedBookmarks = prev.filter((item) => item.subject !== subject); // 제목으로 필터링하여 삭제
+      localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
+      return updatedBookmarks;
+    });
   };
 
-  // cleanContent 함수 수정: content가 undefined인 경우를 처리
-  const cleanContent = (content) => {
-    if (content) {
-      return content.replace(/!R!!N!/g, "");
-    }
-    return "";
+  const cleanContents = (contents) => {
+    if (!contents) return "";
+    const cleanedContents = contents.replace(/!R!!N!/g, "");
+    const paragraphs = cleanedContents
+      .split(/<\/?p>/)
+      .filter((text) => text.trim() !== "");
+    return paragraphs.join("<br>");
   };
 
   return (
     <Wrap>
-      <Title>북마크</Title>
+      <h2>즐겨찾기</h2>
       {bookmarkedItems.length === 0 ? (
-        <NoBookmarkMessage>북마크한 항목이 없습니다.</NoBookmarkMessage>
+        <p>즐겨찾기가 없습니다.</p>
       ) : (
         <ConWrap>
           {bookmarkedItems.map((item, index) => (
             <Con key={index}>
-              <TitleWrap>
-                <ConTitle>{item.subject}</ConTitle>
+              <ConTitle>
+                <span>{item.subject}</span>
                 <DeleteIcon
                   icon={faTrashAlt}
-                  onClick={() => handleDelete(index)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 클릭 이벤트가 상위 컨테이너로 전달되지 않도록 방지
+                    handleDeleteBookmark(item.subject); // 삭제 처리 함수 호출
+                  }}
                 />
-              </TitleWrap>
+              </ConTitle>
 
               <ConContent
-                dangerouslySetInnerHTML={{
-                  __html: cleanContent(item.contents),
-                }}
-              />
+                      dangerouslySetInnerHTML={{
+                        __html: cleanContents(item.contents),
+                      }}
+                    />
 
-              {item.imgUrl && <Image src={item.imgUrl} alt={item.subject} />}
+              {item.imgUrl && (
+                <Image src={item.imgUrl} alt={item.subject} />
+              )}
+
+              <Sub>북마크 상태: 추가됨</Sub>
             </Con>
           ))}
         </ConWrap>
@@ -145,4 +145,4 @@ const Bookmark = () => {
   );
 };
 
-export default Bookmark;
+export default BookMark;

@@ -1,12 +1,10 @@
 import styled from "styled-components";
 import Logos from "../image/MainLogo";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMagnifyingGlass,
-  faBookmark,
-} from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { mainStyle } from "../GlobalStyled";
 import { Link } from "react-router-dom";
+import { faBookmark } from "@fortawesome/free-regular-svg-icons";
 
 const Wrap = styled.div`
   padding: 15px ${mainStyle.moPadding};

@@ -1,8 +1,10 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // react-router-dom v6 사용
 import styled from "styled-components";
 import { WheelData } from "../../api";
-import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBookmark } from "@fortawesome/free-regular-svg-icons";
 
 const Wrap = styled.div`
   padding: 20px;
@@ -33,14 +35,24 @@ const ConWrap = styled.div`
 const Con = styled.div`
   padding: 15px;
   margin-bottom: 15px;
-  background-color: white;
+  background-color: #f3f6f7;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
 
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
+
+  ${({ expanded }) =>
+    expanded &&
+    `
+    padding-bottom: 30px;
+  `}
 `;
 
 const ConTitle = styled.h4`
@@ -48,17 +60,20 @@ const ConTitle = styled.h4`
   font-weight: bold;
 `;
 
-const Title = styled.div``;
+const Title = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
 
-const BookmarkIcon = styled.button`
-  background: none;
-  border: none;
+const BookmarkIcon = styled(FontAwesomeIcon)`
+  font-size: 24px;
+  color: ${({ isBookmarked }) => (isBookmarked ? "#f39c12" : "#13a89e")};
   cursor: pointer;
-  font-size: 20px;
-  color: #13a89e;
+  transition: color 0.3s ease;
 
   &:hover {
-    color: #0f8073;
+    color: ${({ isBookmarked }) => (isBookmarked ? "#e67e22" : "#0f8073")};
   }
 `;
 
@@ -67,11 +82,18 @@ const ConContent = styled.div`
   color: #666;
   line-height: 1.6;
   margin-top: 5px;
+`;
 
-  a {
-    color: #13a89e;
-    text-decoration: underline;
-  }
+const Image = styled.img`
+  width: 100%;
+  height: auto;
+  margin-top: 15px;
+  border-radius: 20px;
+  cursor: pointer;
+`;
+
+const Sub = styled.div`
+  margin-top: 10px;
 `;
 
 const Search = () => {
@@ -79,17 +101,22 @@ const Search = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bookmarkedItems, setBookmarkedItems] = useState(new Set());
+  const [expandedItem, setExpandedItem] = useState(null);
 
   useEffect(() => {
+    // Load bookmarked items from localStorage
+    const savedBookmarks =
+      JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
+    setBookmarkedItems(new Set(savedBookmarks));
+
+    // Fetch data
     (async () => {
       setLoading(true);
       try {
         const fetchedData = await WheelData();
-        console.log("fetchedData:", fetchedData);
-
         const items = fetchedData?.response?.body?.items?.item || [];
         if (!Array.isArray(items)) {
-          console.error("items가 배열이 아님:", items);
           setData([]);
         } else {
           setData(items);
@@ -102,13 +129,11 @@ const Search = () => {
       } finally {
         setLoading(false);
       }
-      // finally : 항상 실행이 보장되어야 하는 코드, try 블록이 종료되면 실행되는 코드
     })();
   }, []);
 
   const onSearch = ({ search }) => {
     const keyword = search.trim().toLowerCase();
-    // trim : 문자열 앞 뒤 공백 없에기 ex:"가 나 다 라 마"
     if (!keyword) {
       setFilteredData(data);
       return;
@@ -117,18 +142,42 @@ const Search = () => {
     const results = data.filter((item) => {
       const fieldsToSearch = [
         item.subject,
-        item.contents, // HTML 태그는 제거하지 않고 검색
+        item.contents,
         item.gubun,
         item.boardCodeNm,
       ];
-      return fieldsToSearch.some(
-        (field) => field?.toLowerCase().includes(keyword)
-        // 소문자로 변환된 field에 검색어 keyword가 포함되어 있는지 확인.
+      return fieldsToSearch.some((field) =>
+        field?.toLowerCase().includes(keyword)
       );
-      // some: 배열 요소 중 하나라도 조건을 만족할 시 활성화(true 반환, 조건이 만족하지 않을 시 false)
     });
 
     setFilteredData(results);
+  };
+
+  const onItemClick = (item) => {
+    setExpandedItem(item.subject === expandedItem ? null : item.subject);
+  };
+
+  const toggleBookmark = (subject) => {
+    setBookmarkedItems((prev) => {
+      const updatedBookmarks = new Set(prev);
+      if (updatedBookmarks.has(subject)) {
+        updatedBookmarks.delete(subject);
+      } else {
+        updatedBookmarks.add(subject);
+      }
+
+      // Save updated bookmarks to localStorage
+      localStorage.setItem(
+        "bookmarkedItems",
+        JSON.stringify(Array.from(updatedBookmarks))
+      );
+      return updatedBookmarks;
+    });
+  };
+
+  const cleanContent = (content) => {
+    return content.replace(/!R!!N!/g, "");
   };
 
   return (
@@ -148,17 +197,44 @@ const Search = () => {
       ) : (
         <ConWrap>
           {filteredData.map((item, index) => (
-            <Link to={`/detail/${item.subject}`}>
-              <Con key={index}>
+            <div key={index}>
+              <Con
+                expanded={expandedItem === item.subject}
+                onClick={() => onItemClick(item)}
+              >
                 <Title>
                   <ConTitle>{item.subject}</ConTitle>
-                  <ConContent
-                    dangerouslySetInnerHTML={{ __html: item.contents }} // HTML을 직접 렌더링할 때 쓰이는 속성명
+                  <BookmarkIcon
+                    icon={faBookmark}
+                    isBookmarked={bookmarkedItems.has(item.subject)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBookmark(item.subject);
+                    }}
                   />
                 </Title>
-                <BookmarkIcon>☆</BookmarkIcon>
+
+                {expandedItem === item.subject ? (
+                  <>
+                    <ConContent
+                      dangerouslySetInnerHTML={{
+                        __html: cleanContent(item.contents),
+                      }}
+                    />
+                    {item.imgUrl && (
+                      <Image src={item.imgUrl} alt={item.subject} />
+                    )}
+                  </>
+                ) : (
+                  item.imgUrl && (
+                    <>
+                      <Image src={item.imgUrl} alt={item.subject} />
+                      <Sub>보유시설 : {item.setValueNm}</Sub>
+                    </>
+                  )
+                )}
               </Con>
-            </Link>
+            </div>
           ))}
         </ConWrap>
       )}

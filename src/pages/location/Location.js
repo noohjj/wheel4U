@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { WheelData } from "../../api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBookmark as faBookmarkRegular } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark as faBookmarkSolid } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark } from "@fortawesome/free-regular-svg-icons";
 import PageTitle from "../../components/PageTitle";
 
 // 스타일 정의
@@ -120,6 +119,13 @@ const Location = () => {
   const [bookmarkedItems, setBookmarkedItems] = useState([]);
   const navigate = useNavigate(); // useNavigate로 페이지 이동 처리
 
+  // 초기 북마크 데이터 로드
+  useEffect(() => {
+    const savedBookmarks =
+      JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
+    setBookmarkedItems(savedBookmarks);
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -162,24 +168,24 @@ const Location = () => {
     return paragraphs.join("<br>");
   };
 
+  // 북마크 클릭 핸들러
   const handleBookmarkClick = (e, item) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    e.stopPropagation();
     setBookmarkedItems((prevItems) => {
       const isAlreadyBookmarked = prevItems.some(
         (bookmarkedItem) => bookmarkedItem.subject === item.subject
       );
 
-      const updatedBookmarks = isAlreadyBookmarked
-        ? prevItems.filter(
-            (bookmarkedItem) => bookmarkedItem.subject !== item.subject
-          )
-        : [...prevItems, item];
+      if (isAlreadyBookmarked) {
+        return prevItems; // 삭제 방지
+      }
 
-      // localStorage에 북마크 저장
+      const updatedBookmarks = [...prevItems, item];
       localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
       return updatedBookmarks;
     });
   };
+
   return (
     <Wrap>
       <PageTitle title="지역구별 찾기" />
@@ -206,7 +212,7 @@ const Location = () => {
                   <TextBox>
                     <Subject>{item.subject}</Subject>
                     <BookmarkIcon
-                      icon={isBookmarked ? faBookmarkSolid : faBookmarkRegular}
+                      icon={faBookmark}
                       isBookmarked={isBookmarked}
                       onClick={(e) => handleBookmarkClick(e, item)}
                     />

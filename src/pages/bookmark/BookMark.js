@@ -82,19 +82,32 @@ const BookMark = () => {
   // Component load 시 로컬 스토리지에서 북마크 목록을 가져오기
   useEffect(() => {
     try {
-      const savedBookmarks =
-        JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
-      setBookmarkedItems(savedBookmarks);
+      const savedBookmarks = JSON.parse(
+        localStorage.getItem("bookmarkedItems")
+      );
+      if (Array.isArray(savedBookmarks)) {
+        setBookmarkedItems(savedBookmarks.reverse());
+      } else {
+        setBookmarkedItems([]); // 비정상 데이터일 경우 초기화
+      }
     } catch (error) {
       console.error("북마크 불러오기 오류", error);
+      setBookmarkedItems([]); // 오류 발생 시 초기화
     }
   }, []);
 
   // 북마크 삭제 처리
   const handleDeleteBookmark = (subject) => {
     setBookmarkedItems((prev) => {
-      const updatedBookmarks = prev.filter((item) => item.subject !== subject); // 제목으로 필터링하여 삭제
-      localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
+      const updatedBookmarks = prev.filter((item) => item.subject !== subject);
+      try {
+        localStorage.setItem(
+          "bookmarkedItems",
+          JSON.stringify(updatedBookmarks)
+        );
+      } catch (error) {
+        console.error("북마크 저장 오류", error);
+      }
       return updatedBookmarks;
     });
   };

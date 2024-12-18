@@ -134,12 +134,11 @@ const Search = () => {
         (bookmarkedItem) => bookmarkedItem.subject === item.subject
       );
 
-      const updatedBookmarks = isAlreadyBookmarked
-        ? prevItems.filter(
-            (bookmarkedItem) => bookmarkedItem.subject !== item.subject
-          )
-        : [...prevItems, item];
+      if (isAlreadyBookmarked) {
+        return prevItems; // 삭제되지 않도록
+      }
 
+      const updatedBookmarks = [...prevItems, item];
       localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
       return updatedBookmarks;
     });

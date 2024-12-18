@@ -221,7 +221,10 @@ const Search = () => {
                       }}
                     />
                     {item.imgUrl && (
-                      <Image src={item.imgUrl} alt={item.subject} />
+                      <>
+                        <Image src={item.imgUrl} alt={item.subject} />
+                        <Sub>보유시설 : {item.setValueNm}</Sub>
+                      </>
                     )}
                   </>
                 ) : (

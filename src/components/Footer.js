@@ -4,7 +4,7 @@ const Wrap = styled.div`
   width: 100%;
   height: 100px;
   background-color: #13a89e;
-  font-size: 16px;
+  font-size: 14px;
   display: flex;
   justify-content: center;
   align-items: center;

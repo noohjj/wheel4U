@@ -128,7 +128,8 @@ const Container = styled.div`
 `;
 const ConWrap = styled.div`
   background-color: #f3f6f7;
-  width: 180px;
+  width: 100%;
+  max-width: 180px;
   height: 150px;
   padding: 30px;
   display: flex;

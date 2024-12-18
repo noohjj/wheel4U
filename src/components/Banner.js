@@ -9,7 +9,8 @@ const Wrap = styled.div`
   margin-top: 20px;
   position: relative;
   img {
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     height: 360px;
     border-radius: 20px;
   }

@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-regular-svg-icons";
 import { WheelData } from "../../api";
+import PageTitle from "../../components/PageTitle";
 
 const Wrap = styled.div`
   padding: 20px;
@@ -176,6 +177,7 @@ const Search = () => {
 
   return (
     <Wrap>
+      <PageTitle title="검색" />
       <Form onSubmit={handleSubmit(onSearch)}>
         <input
           {...register("search", { required: false })}
@@ -201,7 +203,8 @@ const Search = () => {
                   <BookmarkIcon
                     icon={faBookmark}
                     isBookmarked={bookmarkedItems.some(
-                      (bookmarkedItem) => bookmarkedItem.subject === item.subject
+                      (bookmarkedItem) =>
+                        bookmarkedItem.subject === item.subject
                     )}
                     onClick={(e) => {
                       e.stopPropagation();

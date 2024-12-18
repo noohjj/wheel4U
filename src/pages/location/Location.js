@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // useNavigate로 변경
+import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { WheelData } from "../../api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBookmark as faBookmarkRegular,
-  faBookmark as faBookmarkSolid,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as faBookmarkRegular } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark as faBookmarkSolid } from "@fortawesome/free-solid-svg-icons";
+import PageTitle from "../../components/PageTitle";
 
 // 스타일 정의
 const Wrap = styled.div`
@@ -93,19 +92,17 @@ const Image = styled.img`
   border-radius: 20px;
 `;
 
-const BookmarkIcon = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
+const BookmarkIcon = styled(FontAwesomeIcon)`
   font-size: 20px;
-  color: #13a89e;
+  color: ${({ isBookmarked }) => (isBookmarked ? "#f39c12" : "#13a89e")};
   position: absolute;
   right: 10px;
   top: 10px;
-  transform: translateY(0);
+  cursor: pointer;
+  transition: color 0.3s ease;
 
   &:hover {
-    color: #0f8073;
+    color: ${({ isBookmarked }) => (isBookmarked ? "#e67e22" : "#0f8073")};
   }
 `;
 
@@ -165,28 +162,27 @@ const Location = () => {
     return paragraphs.join("<br>");
   };
 
-  const handleBookmarkClick = (item) => {
+  const handleBookmarkClick = (e, item) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
     setBookmarkedItems((prevItems) => {
-      if (
-        prevItems.some(
-          (bookmarkedItem) => bookmarkedItem.subject === item.subject
-        )
-      ) {
-        return prevItems.filter(
-          (bookmarkedItem) => bookmarkedItem.subject !== item.subject
-        );
-      } else {
-        return [...prevItems, item];
-      }
+      const isAlreadyBookmarked = prevItems.some(
+        (bookmarkedItem) => bookmarkedItem.subject === item.subject
+      );
+
+      const updatedBookmarks = isAlreadyBookmarked
+        ? prevItems.filter(
+            (bookmarkedItem) => bookmarkedItem.subject !== item.subject
+          )
+        : [...prevItems, item];
+
+      // localStorage에 북마크 저장
+      localStorage.setItem("bookmarkedItems", JSON.stringify(updatedBookmarks));
+      return updatedBookmarks;
     });
   };
-
-  useEffect(() => {
-    localStorage.setItem("bookmarkedItems", JSON.stringify(bookmarkedItems));
-  }, [bookmarkedItems]);
-
   return (
     <Wrap>
+      <PageTitle title="지역구별 찾기" />
       <Title>{decodedLocateNm}</Title>
       {isLoading ? (
         <p>로딩 중...</p>
@@ -194,46 +190,39 @@ const Location = () => {
         <p>데이터가 없습니다.</p>
       ) : (
         <CardList>
-          {data.map((item, index) => (
-            <Card
-              key={index}
-              expanded={openCardIndex === index}
-              onClick={() =>
-                setOpenCardIndex(openCardIndex === index ? null : index)
-              }
-            >
-              <CardContent>
-                <TextBox>
-                  <Subject>{item.subject}</Subject>
-                  <BookmarkIcon
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBookmarkClick(item);
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={
-                        bookmarkedItems.some(
-                          (bookmarkedItem) =>
-                            bookmarkedItem.subject === item.subject
-                        )
-                          ? faBookmarkSolid
-                          : faBookmarkRegular
-                      }
+          {data.map((item, index) => {
+            const isBookmarked = bookmarkedItems.some(
+              (bookmarkedItem) => bookmarkedItem.subject === item.subject
+            );
+
+            return (
+              <Card
+                key={index}
+                onClick={() =>
+                  setOpenCardIndex(openCardIndex === index ? null : index)
+                }
+              >
+                <CardContent>
+                  <TextBox>
+                    <Subject>{item.subject}</Subject>
+                    <BookmarkIcon
+                      icon={isBookmarked ? faBookmarkSolid : faBookmarkRegular}
+                      isBookmarked={isBookmarked}
+                      onClick={(e) => handleBookmarkClick(e, item)}
                     />
-                  </BookmarkIcon>
-                </TextBox>
-                <Info
-                  dangerouslySetInnerHTML={{
-                    __html: cleanContents(item.contents),
-                  }}
-                  isOpen={openCardIndex === index}
-                />
-              </CardContent>
-              <Image src={item.imgUrl} alt={item.subject} />
-              <Sub>보유시설 : {item.setValueNm}</Sub>
-            </Card>
-          ))}
+                  </TextBox>
+                  <Info
+                    dangerouslySetInnerHTML={{
+                      __html: cleanContents(item.contents),
+                    }}
+                    isOpen={openCardIndex === index}
+                  />
+                </CardContent>
+                <Image src={item.imgUrl} alt={item.subject} />
+                <Sub>보유시설 : {item.setValueNm}</Sub>
+              </Card>
+            );
+          })}
         </CardList>
       )}
     </Wrap>

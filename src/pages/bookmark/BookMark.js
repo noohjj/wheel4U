@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import PageTitle from "../../components/PageTitle";
 
 const Wrap = styled.div`
   padding: 20px;
   background-color: #f9f9f9;
-  h2{
+  h2 {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 20px;
@@ -81,7 +82,8 @@ const BookMark = () => {
   // Component load 시 로컬 스토리지에서 북마크 목록을 가져오기
   useEffect(() => {
     try {
-      const savedBookmarks = JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
+      const savedBookmarks =
+        JSON.parse(localStorage.getItem("bookmarkedItems")) || [];
       setBookmarkedItems(savedBookmarks);
     } catch (error) {
       console.error("북마크 불러오기 오류", error);
@@ -108,6 +110,7 @@ const BookMark = () => {
 
   return (
     <Wrap>
+      <PageTitle title="즐겨찾기" />
       <h2>즐겨찾기</h2>
       {bookmarkedItems.length === 0 ? (
         <p>즐겨찾기가 없습니다.</p>
@@ -127,14 +130,12 @@ const BookMark = () => {
               </ConTitle>
 
               <ConContent
-                      dangerouslySetInnerHTML={{
-                        __html: cleanContents(item.contents),
-                      }}
-                    />
+                dangerouslySetInnerHTML={{
+                  __html: cleanContents(item.contents),
+                }}
+              />
 
-              {item.imgUrl && (
-                <Image src={item.imgUrl} alt={item.subject} />
-              )}
+              {item.imgUrl && <Image src={item.imgUrl} alt={item.subject} />}
 
               <Sub>북마크 상태: 추가됨</Sub>
             </Con>

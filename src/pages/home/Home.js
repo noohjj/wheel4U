@@ -3,6 +3,7 @@ import { WheelData } from "../../api";
 import Banner from "../../components/Banner";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
+import PageTitle from "../../components/PageTitle";
 
 const LocateData = [
   {
@@ -120,8 +121,6 @@ const Text = styled.h3`
 `;
 
 const Container = styled.div`
-  height: 495px;
-  overflow: hidden;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
@@ -171,6 +170,7 @@ const Home = () => {
 
   return (
     <AllWrap>
+      <PageTitle title="HOME" />
       <Wrap>
         <Banner />
       </Wrap>

@@ -29,8 +29,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
+  "homepage": "https://noohjj.github.io/wheel4U/#/",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -51,6 +54,7 @@
   },
   "devDependencies": {
     "buffer": "^6.0.3",
+    "gh-pages": "^6.2.0",
     "react-app-rewired": "^2.2.1",
     "timers-browserify": "^2.0.12"
   }
